@@ -344,9 +344,12 @@ recordingsList.addEventListener('click', (event) => {
         const recordingId = listItem.getAttribute('data-id');
         const currentState = playButton.getAttribute('data-state');
         
+        // Check if we're toggling the same recording that was already playing/paused
+        const isSameRecording = currentPlayButton === playButton && currentAudio;
+        
         if (currentState === 'play') {
-            // Stop any currently playing audio
-            if (currentAudio) {
+            // Stop any currently playing different audio
+            if (currentAudio && !isSameRecording) {
                 currentAudio.pause();
                 currentAudio.currentTime = 0;
                 if (currentPlayButton) {
@@ -355,10 +358,16 @@ recordingsList.addEventListener('click', (event) => {
                 }
             }
             
-            // Get the recording from IndexedDB and play it
-            const transaction = db.transaction(['recordings'], 'readonly');
-            const objectStore = transaction.objectStore('recordings');
-            const request = objectStore.get(Number(recordingId));
+            // If this is the same recording that was paused, just resume it
+            if (isSameRecording) {
+                currentAudio.play();
+                playButton.textContent = 'Pause';
+                playButton.setAttribute('data-state', 'pause');
+            } else {
+                // Get a new recording from IndexedDB and play it
+                const transaction = db.transaction(['recordings'], 'readonly');
+                const objectStore = transaction.objectStore('recordings');
+                const request = objectStore.get(Number(recordingId));
             
             request.onsuccess = (event) => {
                 const recording = event.target.result;
@@ -399,15 +408,14 @@ recordingsList.addEventListener('click', (event) => {
             request.onerror = (event) => {
                 console.error('Error getting recording for playback:', event.target.error);
             };
+            }
         } else {
             // Pause the currently playing audio
             if (currentAudio) {
                 currentAudio.pause();
-                currentAudio.currentTime = 0;
+                // Don't reset currentTime or currentAudio to preserve playback position
                 playButton.textContent = 'Play';
                 playButton.setAttribute('data-state', 'play');
-                currentAudio = null;
-                currentPlayButton = null;
             }
         }
     }
