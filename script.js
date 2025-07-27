@@ -137,14 +137,14 @@ function displayRecordings() {
             
             // Create play button (always starts from beginning)
             const playBtn = document.createElement('button');
-            playBtn.className = 'play-btn';
+            playBtn.className = "audio-control-button play-btn";
             playBtn.textContent = '▶️';
             playBtn.title = 'Play from beginning';
             playBtn.setAttribute('data-state', 'stopped');
             
             // Create pause button (initially hidden)
             const pauseBtn = document.createElement('button');
-            pauseBtn.className = 'pause-btn';
+            pauseBtn.className = "audio-control-button pause-btn";
             pauseBtn.textContent = '⏸️';
             pauseBtn.title = 'Pause';
             pauseBtn.style.display = 'none';
@@ -152,7 +152,7 @@ function displayRecordings() {
             
             // Create resume button (initially hidden)
             const resumeBtn = document.createElement('button');
-            resumeBtn.className = 'resume-btn';
+            resumeBtn.className = "audio-control-button resume-btn";
             resumeBtn.textContent = '⏯️';
             resumeBtn.title = 'Resume from pause';
             resumeBtn.style.display = 'none';
