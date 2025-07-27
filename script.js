@@ -72,6 +72,26 @@ function initDB() {
     };
 }
 
+// Helper functions for button state management
+function resetAllButtons() {
+    const allListItems = document.querySelectorAll('#recordingsList li[data-id]');
+    allListItems.forEach(listItem => {
+        resetButtonsForRecording(listItem);
+    });
+}
+
+function resetButtonsForRecording(listItem) {
+    const playButton = listItem.querySelector('.play-btn');
+    const pauseButton = listItem.querySelector('.pause-btn');
+    const resumeButton = listItem.querySelector('.resume-btn');
+    
+    if (playButton && pauseButton && resumeButton) {
+        playButton.style.display = 'inline-block';
+        pauseButton.style.display = 'none';
+        resumeButton.style.display = 'none';
+    }
+}
+
 // Display Recordings Function
 function displayRecordings() {
     recordingsList.innerHTML = '';
@@ -114,11 +134,28 @@ function displayRecordings() {
             fileSizeSpan.className = 'file-size';
             fileSizeSpan.textContent = recording.fileSize ? formatFileSize(recording.fileSize) : 'Unknown size';
             
-            // Create play button
+            // Create play button (always starts from beginning)
             const playBtn = document.createElement('button');
             playBtn.className = 'play-btn';
-            playBtn.textContent = 'Play';
-            playBtn.setAttribute('data-state', 'play');
+            playBtn.textContent = '▶️';
+            playBtn.title = 'Play from beginning';
+            playBtn.setAttribute('data-state', 'stopped');
+            
+            // Create pause button (initially hidden)
+            const pauseBtn = document.createElement('button');
+            pauseBtn.className = 'pause-btn';
+            pauseBtn.textContent = '⏸️';
+            pauseBtn.title = 'Pause';
+            pauseBtn.style.display = 'none';
+            pauseBtn.setAttribute('data-state', 'hidden');
+            
+            // Create resume button (initially hidden)
+            const resumeBtn = document.createElement('button');
+            resumeBtn.className = 'resume-btn';
+            resumeBtn.textContent = '⏯️';
+            resumeBtn.title = 'Resume from pause';
+            resumeBtn.style.display = 'none';
+            resumeBtn.setAttribute('data-state', 'hidden');
             
             // Create download button
             const downloadBtn = document.createElement('button');
@@ -135,6 +172,8 @@ function displayRecordings() {
             li.appendChild(durationSpan);
             li.appendChild(fileSizeSpan);
             li.appendChild(playBtn);
+            li.appendChild(pauseBtn);
+            li.appendChild(resumeBtn);
             li.appendChild(downloadBtn);
             li.appendChild(deleteBtn);
             
@@ -337,86 +376,103 @@ recordingsList.addEventListener('click', (event) => {
         }
     }
     
-    // Play/Pause Recording
+    // Play Recording (always from beginning)
     else if (event.target.classList.contains('play-btn')) {
         const playButton = event.target;
         const listItem = playButton.closest('li');
         const recordingId = listItem.getAttribute('data-id');
-        const currentState = playButton.getAttribute('data-state');
+        const pauseButton = listItem.querySelector('.pause-btn');
+        const resumeButton = listItem.querySelector('.resume-btn');
         
-        // Check if we're toggling the same recording that was already playing/paused
-        const isSameRecording = currentPlayButton === playButton && currentAudio;
+        // Stop any currently playing audio from other recordings
+        if (currentAudio && currentPlayButton && currentPlayButton !== playButton) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            resetAllButtons();
+        }
         
-        if (currentState === 'play') {
-            // Stop any currently playing different audio
-            if (currentAudio && !isSameRecording) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-                if (currentPlayButton) {
-                    currentPlayButton.textContent = 'Play';
-                    currentPlayButton.setAttribute('data-state', 'play');
-                }
-            }
-            
-            // If this is the same recording that was paused, just resume it
-            if (isSameRecording) {
+        // Stop current audio if it's the same recording
+        if (currentAudio && currentPlayButton === playButton) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        
+        // Get recording from IndexedDB and play from beginning
+        const transaction = db.transaction(['recordings'], 'readonly');
+        const objectStore = transaction.objectStore('recordings');
+        const request = objectStore.get(Number(recordingId));
+        
+        request.onsuccess = (event) => {
+            const recording = event.target.result;
+            if (recording) {
+                // Create audio element and play from beginning
+                const audioUrl = URL.createObjectURL(recording.audio);
+                currentAudio = new Audio(audioUrl);
+                currentPlayButton = playButton;
+                
+                // Update button states
+                playButton.style.display = 'none';
+                pauseButton.style.display = 'inline-block';
+                resumeButton.style.display = 'none';
+                
+                // Play the audio
                 currentAudio.play();
-                playButton.textContent = 'Pause';
-                playButton.setAttribute('data-state', 'pause');
-            } else {
-                // Get a new recording from IndexedDB and play it
-                const transaction = db.transaction(['recordings'], 'readonly');
-                const objectStore = transaction.objectStore('recordings');
-                const request = objectStore.get(Number(recordingId));
-            
-            request.onsuccess = (event) => {
-                const recording = event.target.result;
-                if (recording) {
-                    // Create audio element and play
-                    const audioUrl = URL.createObjectURL(recording.audio);
-                    currentAudio = new Audio(audioUrl);
-                    currentPlayButton = playButton;
-                    
-                    // Update button state
-                    playButton.textContent = 'Pause';
-                    playButton.setAttribute('data-state', 'pause');
-                    
-                    // Play the audio
-                    currentAudio.play();
-                    
-                    // Handle audio end event
-                    currentAudio.addEventListener('ended', () => {
-                        playButton.textContent = 'Play';
-                        playButton.setAttribute('data-state', 'play');
-                        URL.revokeObjectURL(audioUrl);
-                        currentAudio = null;
-                        currentPlayButton = null;
-                    });
-                    
-                    // Handle audio error
-                    currentAudio.addEventListener('error', () => {
-                        console.error('Error playing audio');
-                        playButton.textContent = 'Play';
-                        playButton.setAttribute('data-state', 'play');
-                        URL.revokeObjectURL(audioUrl);
-                        currentAudio = null;
-                        currentPlayButton = null;
-                    });
-                }
-            };
-            
-            request.onerror = (event) => {
-                console.error('Error getting recording for playback:', event.target.error);
-            };
+                
+                // Handle audio end event
+                currentAudio.addEventListener('ended', () => {
+                    resetButtonsForRecording(listItem);
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                    currentPlayButton = null;
+                });
+                
+                // Handle audio error
+                currentAudio.addEventListener('error', () => {
+                    console.error('Error playing audio');
+                    resetButtonsForRecording(listItem);
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                    currentPlayButton = null;
+                });
             }
-        } else {
-            // Pause the currently playing audio
-            if (currentAudio) {
-                currentAudio.pause();
-                // Don't reset currentTime or currentAudio to preserve playback position
-                playButton.textContent = 'Play';
-                playButton.setAttribute('data-state', 'play');
-            }
+        };
+        
+        request.onerror = (event) => {
+            console.error('Error getting recording for playback:', event.target.error);
+        };
+    }
+    
+    // Pause Recording
+    else if (event.target.classList.contains('pause-btn')) {
+        const pauseButton = event.target;
+        const listItem = pauseButton.closest('li');
+        const playButton = listItem.querySelector('.play-btn');
+        const resumeButton = listItem.querySelector('.resume-btn');
+        
+        if (currentAudio && currentPlayButton && currentPlayButton.closest('li') === listItem) {
+            currentAudio.pause();
+            
+            // Update button states - show Play and Resume, hide Pause
+            playButton.style.display = 'inline-block';
+            pauseButton.style.display = 'none';
+            resumeButton.style.display = 'inline-block';
+        }
+    }
+    
+    // Resume Recording
+    else if (event.target.classList.contains('resume-btn')) {
+        const resumeButton = event.target;
+        const listItem = resumeButton.closest('li');
+        const playButton = listItem.querySelector('.play-btn');
+        const pauseButton = listItem.querySelector('.pause-btn');
+        
+        if (currentAudio && currentPlayButton && currentPlayButton.closest('li') === listItem) {
+            currentAudio.play();
+            
+            // Update button states - show only Pause
+            playButton.style.display = 'none';
+            pauseButton.style.display = 'inline-block';
+            resumeButton.style.display = 'none';
         }
     }
     
