@@ -33,6 +33,18 @@ let currentPlayButton = null;
 // IndexedDB Helper
 let db;
 
+// Utility function to format file size in readable format
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    const size = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
+    return `${size}${sizes[i]}`;
+}
+
 function initDB() {
     const request = indexedDB.open('voice_recorder_db', 1);
     
@@ -97,6 +109,11 @@ function displayRecordings() {
             const durationSpan = document.createElement('span');
             durationSpan.textContent = recording.duration;
             
+            // Create file size span
+            const fileSizeSpan = document.createElement('span');
+            fileSizeSpan.className = 'file-size';
+            fileSizeSpan.textContent = recording.fileSize ? formatFileSize(recording.fileSize) : 'Unknown size';
+            
             // Create play button
             const playBtn = document.createElement('button');
             playBtn.className = 'play-btn';
@@ -116,6 +133,7 @@ function displayRecordings() {
             // Append all elements to the list item
             li.appendChild(titleSpan);
             li.appendChild(durationSpan);
+            li.appendChild(fileSizeSpan);
             li.appendChild(playBtn);
             li.appendChild(downloadBtn);
             li.appendChild(deleteBtn);
@@ -204,7 +222,8 @@ recordButton.addEventListener('click', () => {
                     title: title,
                     duration: duration,
                     createdAt: new Date(),
-                    audio: audioBlob
+                    audio: audioBlob,
+                    fileSize: audioBlob.size
                 };
                 
                 // Save to IndexedDB
