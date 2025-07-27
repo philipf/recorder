@@ -25,6 +25,7 @@ let recordingStartTime;
 let timerInterval;
 let pausedTime = 0;
 let isPaused = false;
+let pauseStartTime = null; // Track when pause started
 
 // State Variables for Audio Playback
 let currentAudio = null;
@@ -341,12 +342,13 @@ pauseButton.addEventListener('click', () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.pause();
         isPaused = true;
+        pauseStartTime = new Date(); // Mark when pause started
         pauseButton.textContent = 'Resume';
     } else if (mediaRecorder && mediaRecorder.state === 'paused') {
-        const pauseEndTime = new Date();
-        pausedTime += pauseEndTime - recordingStartTime;
-        recordingStartTime = pauseEndTime;
-        
+        if (pauseStartTime) {
+            pausedTime += new Date() - pauseStartTime; // Add pause duration
+            pauseStartTime = null;
+        }
         mediaRecorder.resume();
         isPaused = false;
         pauseButton.textContent = 'Pause';
