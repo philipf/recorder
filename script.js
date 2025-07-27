@@ -583,6 +583,16 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                // Listen for updates
+                registration.onupdatefound = () => {
+                    const newWorker = registration.installing;
+                    newWorker.onstatechange = () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New or updated content is available
+                            alert('A new version is available. Please refresh the page to update.');
+                        }
+                    };
+                };
             })
             .catch(error => {
                 console.log('ServiceWorker registration failed: ', error);
