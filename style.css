@@ -1,0 +1,203 @@
+/* Dark theme and basic styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+#recordButton {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 20px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+}
+
+#recordButton:hover {
+    background-color: #ff6666;
+}
+
+#recordButton:active {
+    transform: translateY(1px);
+}
+
+#recordingControls {
+    display: none;
+    margin-top: 20px;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+}
+
+#recordingControls.active {
+    display: flex;
+}
+
+#recordingControls.hidden {
+    display: none;
+}
+
+#timer {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff4444;
+    min-width: 80px;
+}
+
+#pauseButton, #stopButton {
+    background-color: #333333;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#pauseButton:hover, #stopButton:hover {
+    background-color: #555555;
+}
+
+#stopButton {
+    background-color: #666666;
+}
+
+#stopButton:hover {
+    background-color: #888888;
+}
+
+main {
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #cccccc;
+    font-size: 24px;
+}
+
+#recordingsList {
+    list-style: none;
+    background-color: #2a2a2a;
+    border-radius: 10px;
+    padding: 20px;
+    min-height: 100px;
+    border: 2px dashed #444444;
+}
+
+#recordingsList:empty::before {
+    content: "No recordings yet. Start recording to see your files here.";
+    color: #888888;
+    font-style: italic;
+}
+
+/* Recordings list item styling */
+#recordingsList li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #333333;
+    border-radius: 8px;
+    border: 1px solid #444444;
+    transition: background-color 0.2s ease;
+}
+
+#recordingsList li:hover {
+    background-color: #3a3a3a;
+}
+
+#recordingsList li:last-child {
+    margin-bottom: 0;
+}
+
+.recording-title {
+    flex: 1;
+    text-align: left;
+    font-weight: 500;
+    color: #ffffff;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.recording-title:hover {
+    color: #cccccc;
+}
+
+.recording-title-input {
+    flex: 1;
+    background-color: #444444;
+    color: #ffffff;
+    border: 1px solid #666666;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 15px;
+    outline: none;
+}
+
+.recording-title-input:focus {
+    border-color: #4CAF50;
+    background-color: #555555;
+}
+
+#recordingsList li span:not(.recording-title) {
+    color: #cccccc;
+    font-size: 14px;
+    margin-right: 15px;
+    min-width: 60px;
+}
+
+.download-btn, .delete-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-left: 8px;
+}
+
+.download-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.download-btn:hover {
+    background-color: #45a049;
+}
+
+.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #da190b;
+}
