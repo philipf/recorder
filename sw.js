@@ -1,4 +1,4 @@
-const CACHE_NAME = 'voice-recorder-v1.0.3';
+const CACHE_NAME = 'voice-recorder-v1.1.2';
 const urlsToCache = [
   '/',
   '/index.html',
