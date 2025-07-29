@@ -311,7 +311,7 @@ recordButton.addEventListener('click', () => {
 
 // Stop Recording Logic
 stopButton.addEventListener('click', () => {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
+    if (mediaRecorder && (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
         mediaRecorder.stop();
         
         // Stop all tracks to release microphone
