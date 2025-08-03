@@ -24,6 +24,17 @@ header {
     max-width: 600px;
 }
 
+#waveform {
+    display: block;
+    margin: 0 auto 8px auto;
+    background: #23272b;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    width: 100%;
+    max-width: 480px;
+    height: 80px;
+}
+
 .header-content {
     display: flex;
     flex-direction: column;

@@ -502,6 +502,59 @@ function finalizeDraftRecording(draftId, finalChunks = []) {
 recordButton.addEventListener('click', () => {
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
+            // --- Waveform Visualization Setup ---
+            const waveformCanvas = document.getElementById('waveform');
+            const waveformCtx = waveformCanvas.getContext('2d');
+            let audioContext, analyser, sourceNode, animationId;
+
+            // Create AudioContext and AnalyserNode
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 1024;
+            sourceNode = audioContext.createMediaStreamSource(stream);
+            sourceNode.connect(analyser);
+
+            // Show canvas
+            waveformCanvas.style.display = 'block';
+
+            function drawWaveform() {
+                const bufferLength = analyser.fftSize;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+                waveformCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                waveformCtx.lineWidth = 2;
+                waveformCtx.strokeStyle = '#4CAF50';
+                waveformCtx.beginPath();
+                const sliceWidth = waveformCanvas.width / bufferLength;
+                let x = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = (v * waveformCanvas.height) / 2;
+                    if (i === 0) {
+                        waveformCtx.moveTo(x, y);
+                    } else {
+                        waveformCtx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                waveformCtx.lineTo(waveformCanvas.width, waveformCanvas.height / 2);
+                waveformCtx.stroke();
+                animationId = requestAnimationFrame(drawWaveform);
+            }
+            drawWaveform();
+
+            // Attach cleanup to mediaRecorder for stop
+            function cleanupWaveform() {
+                cancelAnimationFrame(animationId);
+                waveformCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                waveformCanvas.style.display = 'none';
+                if (audioContext) {
+                    audioContext.close();
+                }
+            }
+            // Save for later cleanup
+            window._waveformCleanup = cleanupWaveform;
+            
             recordingStartTime = new Date();
             currentDraftId = 'draft_' + recordingStartTime.getTime(); // Generate unique draft ID
             lastDraftSaveTime = recordingStartTime;
@@ -533,6 +586,11 @@ recordButton.addEventListener('click', () => {
                 
             // Handle stop event - save recording using draft finalization
             mediaRecorder.onstop = async () => {
+    // --- Waveform Visualization Cleanup ---
+    if (window._waveformCleanup) {
+        window._waveformCleanup();
+        window._waveformCleanup = null;
+    }
                 console.log(' MediaRecorder stopped, starting save process...', {
                     currentDraftId: currentDraftId,
                     audioChunksCount: audioChunks.length,
@@ -724,6 +782,11 @@ stopButton.addEventListener('click', () => {
     // Update UI
     recordButton.style.display = 'block';
     recordingControls.classList.remove('active');
+    // --- Waveform Visualization Cleanup ---
+    if (window._waveformCleanup) {
+        window._waveformCleanup();
+        window._waveformCleanup = null;
+    }
 });
 
 // Pause/Resume Recording Logic
